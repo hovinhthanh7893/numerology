@@ -1,0 +1,25 @@
+{
+  "short_name": "Numerology",
+  "name": "NUMEROLOGY",
+  "icons": [
+    {
+      "src": "./icons/favicon/favicon.ico",
+      "sizes": "64x64 24x24",
+      "type": "icons/x-icon"
+    },
+    {
+      "src": "./icons/favicon/android-chrome-192x192.png",
+      "type": "icons/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "./icons/favicon/android-chrome-512x512.png",
+      "type": "icons/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#000000"
+}
