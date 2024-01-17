@@ -1,4 +1,4 @@
 # NUMEROLOGY
 https://hovinhthanh7893.github.io/numerology/
 
-Updated February 2023
+Updated January 2024
