@@ -1,4 +1,6 @@
 # NUMEROLOGY
+3D website with 1 single HTML file
+
 https://hovinhthanh7893.github.io/numerology/
 
-Updated January 2024
+Updated December 2025

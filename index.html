@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <title>NUMEROLOGY</title>
@@ -7,31 +7,520 @@
     <meta name="description" content="numerology" />
     <meta name="keywords" content="numerology">
     <meta name="theme-color" content="#000000" />
-    <link rel="icon" href="./icons/favicon/favicon.ico" />
-    <link rel="icon" type="image/png" sizes="32x32" href="./icons/favicon/favicon-32x32.png">
-    <link rel="icon" type="image/png" sizes="16x16" href="./icons/favicon/favicon-16x16.png">
-    <link rel="apple-touch-icon" sizes="180x180" href="./icons/favicon/apple-touch-icon.png">
-    <link rel="manifest" href="./manifest.json" />
-    <link rel="stylesheet" type="text/css" href="./style.css" />
-    <link href="https://fonts.googleapis.com/css2?family=Cormorant:wght@300&family=Josefin+Sans&family=Jost:wght@300&display=swap" rel="stylesheet">
+    <link rel="icon" type="image/png" href="/favicon/favicon-96x96.png" sizes="96x96" />
+    <link rel="icon" type="image/svg+xml" href="/favicon/favicon.svg" />
+    <link rel="shortcut icon" href="/favicon/favicon.ico" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/favicon/apple-touch-icon.png" />
+    <meta name="apple-mobile-web-app-title" content="Numerology" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <link href="https://fonts.googleapis.com/css?family=Josefin+Sans:300,400,500,700" rel="stylesheet">
+  <style>
+    html, body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      background: #000;
+      font-family: 'Josefin Sans', sans-serif;
+      color: #fff;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    #app {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    .content {
+      position: absolute;
+      top: 50%;
+      right: 10px;
+      translate: 0 -50%;
+      width: calc(60% - 20px);
+      height: calc(100% - 20px);
+      padding: 32px;
+      border: 1px solid rgba(255,255,255,0.04);
+      border-radius: 10px 20px 20px 10px;
+      box-sizing: border-box;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      gap: 18px;
+      background: rgba(18,18,18,0.30);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+      z-index: 5;
+    }
+    a {
+      color: gold;
+    }
+    h1 {
+      margin: 0 0 6px 0;
+      font-size: 30px;
+      font-weight: 700;
+      color: #ffffff;
+    }
+    main {
+      width: 100%;
+    }
+    label {
+      font-size: 13px;
+      color: #fff9;
+      display: block;
+      margin-bottom: 6px;
+    }
+    input[type="date"] {
+      width: 100%;
+      padding: 12px 14px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.06);
+      color: #fff;
+      border-radius: 10px;
+      outline: none;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    footer {
+      text-align: center;
+    }
+    @media (max-width: 640px){
+      .content { 
+        right: 0;
+        width: 100%;
+        height: 100%;
+        padding: 24px;
+        border-radius: 0;
+        border: none;
+      }
+    }
+  </style>
   </head>
   <body>
-    <nav>
-      <div class="navMain">
-      </div>
-    </nav>
-    <main>
-        <h1>Hello</h1>
-    </main>
-    <footer>
-        <div>
-          Copyright &copy; 2023 All Rights Reserved by 
-          <a class="footLink" href="https://hovinhthanh7893.github.io/portfolio/" target="_blank">hovinhthanh7893</a>
-        </div>
-    </footer>
-    <div class="cursor"></div>
+    <div id="app">
+      <canvas id="canvas"></canvas>
 
-    <script src="http://unpkg.com/vue@next"></script>
-    <script type="module" src="./app.js"></script>
+      <div class="content">
+        <h1>Numerology</h1>
+
+        <main>
+          <label for="bday">Your birthday</label>
+          <input id="bday" type="date" aria-label="Your birthday" />
+        </main>
+
+        <footer>
+          Copyright &copy; 2026 All Rights Reserved by 
+          <a class="footLink" href="https://hovinhthanh7893.github.io/portfolio/" target="_blank">hovinhthanh7893</a>
+        </footer>
+      </div>
+    </div>
+
+    <script src="https://unpkg.com/three@0.158.0/build/three.min.js"></script>
+
+    <script>
+      (() => {
+        // Config
+        const MAX_PARTICLES = 3800
+        const SWITCH_ANIM_DUR = 5000
+        const TRANSITION_DUR = 900
+        const EXPLODE_DUR = 550
+
+        // DOM refs
+        const canvas = document.getElementById('canvas')
+        const dateInput = document.getElementById('bday')
+
+        // THREE renderer & scene
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false })
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+        renderer.setClearColor(0x000000, 1)
+        const scene = new THREE.Scene()
+
+        // camera initial — will update on resize
+        const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 2000)
+        camera.position.set(0, 0, camera.position.z)
+
+        // object group
+        const group = new THREE.Group()
+        scene.add(group)
+
+        // particle sprite
+        function makeCircleTexture() {
+          const s = 64
+          const c = document.createElement('canvas')
+          c.width = c.height = s
+          const ctx = c.getContext('2d')
+          ctx.clearRect(0,0,s,s)
+          ctx.beginPath()
+          const r = s/2 * 0.95
+          ctx.arc(s/2,s/2,r,0,Math.PI*2)
+          const g = ctx.createRadialGradient(s/2,s/2,2, s/2,s/2,r)
+          g.addColorStop(0, 'rgba(255,255,255,1)')
+          g.addColorStop(0.45, 'rgba(255,255,255,0.92)')
+          g.addColorStop(1, 'rgba(255,255,255,0.36)')
+          ctx.fillStyle = g
+          ctx.fill()
+          return new THREE.CanvasTexture(c)
+        }
+        const spriteTex = makeCircleTexture()
+        const material = new THREE.PointsMaterial({
+          size: 6,
+          map: spriteTex,
+          transparent: true,
+          opacity: 0.95,
+          depthWrite: false,
+          blending: THREE.AdditiveBlending
+        })
+
+        // geometry + buffers
+        const geometry = new THREE.BufferGeometry()
+        const positions = new Float32Array(MAX_PARTICLES * 3)
+        const startPositions = new Float32Array(MAX_PARTICLES * 3)
+        const targetPositions = new Float32Array(MAX_PARTICLES * 3)
+        const delays = new Float32Array(MAX_PARTICLES)
+        // init random scatter
+        for (let i=0;i<MAX_PARTICLES;i++){
+          const ix = i*3
+          positions[ix] = (Math.random()-0.5) * 1200
+          positions[ix+1] = (Math.random()-0.5) * 800
+          positions[ix+2] = (Math.random()-0.5) * 800
+          startPositions[ix] = positions[ix]
+          startPositions[ix+1] = positions[ix+1]
+          startPositions[ix+2] = positions[ix+2]
+          targetPositions[ix] = positions[ix]
+          targetPositions[ix+1] = positions[ix+1]
+          targetPositions[ix+2] = positions[ix+2]
+          delays[i] = Math.random()*0.12
+        }
+        geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
+        const points = new THREE.Points(geometry, material)
+        group.add(points)
+
+        // offscreen canvas to draw numbers and sample pixels
+        const off = document.createElement('canvas')
+        const offCtx = off.getContext('2d')
+
+        function updateNumberPosition() {
+          if (window.innerWidth > 640) {
+            // compute visible world width
+            const vFOV = camera.fov * Math.PI / 180
+            const viewHeight = 2 * Math.tan(vFOV / 2) * camera.position.z
+            const viewWidth = viewHeight * camera.aspect
+            // center of 40% of the screen from the left
+            const panelCenterNDC = -0.5 + 0.20
+            group.position.x = panelCenterNDC * viewWidth
+          } else {
+            group.position.x = 0
+          }
+        }
+
+        function resizeRenderer() {
+          renderer.setSize(window.innerWidth, window.innerHeight)
+          camera.aspect = window.innerWidth / window.innerHeight
+
+          if (window.innerWidth >= 640) {
+            const desiredWorldHeight = window.innerHeight * 0.5
+            const vFOV = camera.fov * Math.PI / 180
+            camera.position.z = desiredWorldHeight / (2 * Math.tan(vFOV/2))
+            group.scale.setScalar(1)
+          } else {
+            off.width = 1000; off.height = 500
+            const widestSample = sampleNumberPositions(12,4)
+            let maxX = 0
+            for(const p of widestSample){ maxX = Math.max(maxX, Math.abs(p[0])); }
+            const desiredWidth = window.innerWidth * 0.9 / 2
+            const scale = desiredWidth / maxX
+            group.scale.setScalar(scale)
+            const vFOV = camera.fov * Math.PI / 180
+            camera.position.z = 400
+          }
+
+          camera.updateProjectionMatrix()
+          updateNumberPosition()
+        }
+        window.addEventListener('resize', resizeRenderer)
+        resizeRenderer()
+
+        function sampleNumberPositions(n, sampleStep=6) {
+          const cw = Math.max(300, renderer.domElement.width * 1)
+          const ch = Math.max(200, renderer.domElement.height * 1)
+          off.width = cw
+          off.height = ch
+          offCtx.clearRect(0,0,cw,ch)
+
+          const txt = String(n)
+
+          // choose font size relative to canvas
+          const fontSize = Math.floor(Math.min(cw, ch) * 0.9)
+          offCtx.fillStyle = '#fff'
+          offCtx.textBaseline = 'middle'
+          offCtx.font = `bold ${fontSize}px Arial, sans-serif`
+
+          if (txt.length === 1) {
+            offCtx.textAlign = 'center'
+            offCtx.fillText(txt, cw/2, ch/2 + fontSize*0.02)
+          } else {
+            // draw two digits closer than default
+            const gapReduction = 0.28; // 0..1 (0.28 reduces spacing noticeably)
+            const chars = txt.split('');
+            const m0 = offCtx.measureText(chars[0]).width
+            const m1 = offCtx.measureText(chars[1]).width
+            // compute total width and place centered but with reduced gap
+            const naturalTotal = m0 + m1
+            const reducedTotal = naturalTotal - (Math.min(m0,m1) * gapReduction)
+            // starting x
+            let startX = (cw - reducedTotal) / 2
+            // draw first char
+            offCtx.textAlign = 'left'
+            offCtx.fillText(chars[0], startX, ch/2 + fontSize*0.02)
+            // draw second char slightly tighter
+            const xSecond = startX + m0 - (Math.min(m0,m1) * gapReduction)
+            offCtx.fillText(chars[1], xSecond, ch/2 + fontSize*0.02)
+          }
+
+          const img = offCtx.getImageData(0,0,cw,ch).data
+          const positions2d = []
+          for (let y = 0; y < ch; y += sampleStep) {
+            for (let x = 0; x < cw; x += sampleStep) {
+              const idx = (y * cw + x) * 4
+              if(img[idx+3]>60){
+                const nx = (x/cw-0.5)*560
+                const ny = -(y/ch-0.5)*320
+                const nz = (Math.random()-0.5)*120
+                positions2d.push([nx,ny,nz])
+              }
+            }
+          }
+          return positions2d
+        }
+
+        // easing
+        function easeOutCubic(t) { return 1 - Math.pow(1 - t, 3) }
+        function easeInOutQuad(t) { return t<0.5 ? 2*t*t : -1 + (4-2*t)*t }
+
+        // transition state
+        let transitionStart = 0
+        let transitionDuration = TRANSITION_DUR
+        let transitioning = false
+        let currentNumber = null
+        let lastRandomNumber = null
+
+        // mode flags
+        let autoMode = true
+        let finalMode = false
+
+        // auto switch timer
+        let switchTimer = null
+        function startAutoSwitch() {
+          if (switchTimer) clearInterval(switchTimer)
+          switchTimer = setInterval(()=> {
+            let n
+            do { n = Math.floor(Math.random()*12) + 1; } while (n === lastRandomNumber)
+            lastRandomNumber = n
+            explodeThenForm(n)
+          }, SWITCH_ANIM_DUR)
+        }
+        function stopAutoSwitch() {
+          if (switchTimer) { 
+            clearInterval(switchTimer)
+            switchTimer = null
+          }
+        }
+
+        // set target positions for a number and start transition
+        function setNumberTarget(n, options = {force:false}) {
+          if (!options.force && currentNumber === n && !transitioning) return
+          currentNumber = n
+          // sample target positions
+          const sampled = sampleNumberPositions(n, 3)
+          for (let i = sampled.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1))
+            const t = sampled[i]; sampled[i] = sampled[j]; sampled[j] = t;
+          }
+          const count = Math.min(sampled.length, MAX_PARTICLES);
+          for (let i = 0; i < MAX_PARTICLES; i++) {
+            const ix = i * 3
+            if (i < count) {
+              const [tx, ty, tz] = sampled[i]
+              targetPositions[ix] = tx + (Math.random()-0.5)*6
+              targetPositions[ix+1] = ty + (Math.random()-0.5)*6
+              targetPositions[ix+2] = tz + (Math.random()-0.5)*10
+            } else {
+              const angle = Math.random() * Math.PI * 2
+              const radius = 1200 + Math.random() * 800
+              targetPositions[ix] = Math.cos(angle) * radius
+              targetPositions[ix+1] = (Math.random()-0.5) * 1200
+              targetPositions[ix+2] = Math.sin(angle) * radius
+            }
+            // copy current positions to startPositions
+            startPositions[ix] = positions[ix]
+            startPositions[ix+1] = positions[ix+1]
+            startPositions[ix+2] = positions[ix+2]
+            delays[i] = Math.random() * 0.18
+          }
+          transitionStart = performance.now()
+          transitioning = true
+          transitionDuration = TRANSITION_DUR
+        }
+
+        // explode outward then form new number (used while switching)
+        function explodeThenForm(n) {
+          const t0 = performance.now()
+          for (let i = 0; i < MAX_PARTICLES; i++) {
+            const ix = i*3
+            startPositions[ix] = positions[ix]
+            startPositions[ix+1] = positions[ix+1]
+            startPositions[ix+2] = positions[ix+2]
+            const dirx = positions[ix] + (Math.random()-0.5)*300
+            const diry = positions[ix+1] + (Math.random()-0.5)*300
+            const dirz = positions[ix+2] + Math.random()*1200 + 500
+            targetPositions[ix] = dirx * (1 + Math.random()*1.8)
+            targetPositions[ix+1] = diry * (1 + Math.random()*1.8)
+            targetPositions[ix+2] = dirz * (1 + Math.random()*0.8)
+            delays[i] = Math.random() * 0.12
+          }
+          transitionStart = t0
+          transitioning = true
+          transitionDuration = EXPLODE_DUR
+          // after outward animation, form the number
+          setTimeout(()=> {
+            setNumberTarget(n, {force:true})
+          }, EXPLODE_DUR + 40)
+        }
+
+        // numerology computation: sum digits repeatedly until <=12 and >=1
+        function computeNumerologyNumberFromDateString(datestr) {
+          if (!datestr) return null
+          const digits = datestr.replace(/[^0-9]/g,'').split('').map(Number)
+          if (digits.length === 0) return null
+          let s = digits.reduce((a,b)=>a+b,0)
+          while (s > 12) {
+            s = String(s).split('').map(Number).reduce((a,b)=>a+b,0)
+          }
+          if (s < 1) return null
+          return s
+        }
+
+        // date input handlers
+        dateInput.addEventListener('input', (e) => {
+          const v = e.target.value
+          if (!v) {
+            // resume auto mode
+            autoMode = true
+            finalMode = false
+            startAutoSwitch()
+            return
+          }
+          const num = computeNumerologyNumberFromDateString(v)
+          if (num === null) {
+            autoMode = true
+            finalMode = false
+            startAutoSwitch()
+          } else {
+            autoMode = false
+            finalMode = true
+            stopAutoSwitch()
+            setNumberTarget(num, {force:true})
+          }
+        });
+        dateInput.addEventListener('change', (e) => {
+          if (!e.target.value) {
+            autoMode = true
+            finalMode = false
+            startAutoSwitch()
+          }
+        });
+        dateInput.addEventListener('keydown', (ev) => {
+          if (ev.key === 'Enter') {
+            const num = computeNumerologyNumberFromDateString(dateInput.value)
+            if (num !== null) {
+              finalMode = true
+              autoMode = false
+              stopAutoSwitch()
+              setNumberTarget(num, {force:true})
+            }
+          }
+        });
+
+        // animation loop
+        let lastTime = performance.now()
+        function animate(nowTime) {
+          requestAnimationFrame(animate)
+          const now = nowTime || performance.now()
+          const dt = now - lastTime
+          lastTime = now
+
+          // rotation behavior:
+          if (finalMode) {
+            // use a slightly faster frequency and small amplitude
+            const swing = Math.sin(now * 0.0016)
+            group.rotation.y = swing * 0.06 // small angle (±0.06 rad ~ ±3.4°)
+            group.rotation.x = Math.sin(now * 0.0009) * 0.02
+          } else {
+            // idle small gentle rotation while cycling
+            group.rotation.y = Math.sin(now * 0.0006) * 0.09
+            group.rotation.x = Math.sin(now * 0.00025) * 0.04
+          }
+
+          // small bob up/down
+          group.position.y = Math.sin(now * 0.0007) * 18
+
+          // transition management
+          if (transitioning) {
+            const elapsed = now - transitionStart
+            const tnorm = Math.min(1, elapsed / transitionDuration)
+            const posAttr = geometry.attributes.position.array
+            for (let i=0;i<MAX_PARTICLES;i++){
+              const delay = delays[i] || 0
+              let lt = (tnorm - delay)
+              lt = Math.max(0, Math.min(1, lt / (1 - delay)))
+              const le = easeInOutQuad(lt)
+              const ix = i*3
+              const sx = startPositions[ix], sy = startPositions[ix+1], sz = startPositions[ix+2]
+              const tx = targetPositions[ix], ty = targetPositions[ix+1], tz = targetPositions[ix+2]
+              if (!finalMode) {
+                posAttr[ix] = sx + (tx - sx) * le + Math.sin((now * 0.001 + i) * 0.13) * 0.12
+                posAttr[ix+1] = sy + (ty - sy) * le + Math.cos((now * 0.001 + i) * 0.11) * 0.12
+              } else {
+                posAttr[ix] = sx + (tx - sx) * le
+                posAttr[ix+1] = sy + (ty - sy) * le
+              }
+              posAttr[ix+2] = sz + (tz - sz) * le
+            }
+            geometry.attributes.position.needsUpdate = true
+            if (tnorm >= 1) transitioning = false
+          } else {
+            // idle micro-motion
+            if (!finalMode) {
+              const posAttr = geometry.attributes.position.array
+              for (let i=0; i < MAX_PARTICLES; i++) {
+                const ix = i*3
+                posAttr[ix] += Math.sin((now*0.0004 + i) * 0.08) * 0.02
+                posAttr[ix+1] += Math.cos((now*0.0003 + i) * 0.09) * 0.02
+                posAttr[ix+2] += Math.sin((now*0.0005 + i) * 0.07) * 0.02
+              }
+              geometry.attributes.position.needsUpdate = true
+            }
+          }
+          renderer.render(scene, camera)
+        }
+        requestAnimationFrame(animate)
+
+        // start auto mode initially
+        function initialPick() {
+          const n = Math.floor(Math.random()*12)+1
+          lastRandomNumber = n
+          setNumberTarget(n, {force:true})
+        }
+        initialPick()
+        startAutoSwitch()
+
+      })()
+    </script>
   </body>
 </html>
